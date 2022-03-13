@@ -1,0 +1,30 @@
+create PROCEDURE [dbo].[InsertXML]
+@xml XML
+AS
+BEGIN
+      SET NOCOUNT ON;
+ 
+	  insert into CUSTOMERS_TABLE(Document,Name,Address,Profession)
+select 
+	   Customer.value('(Document/text())[1]','VARCHAR(100)') AS Document, --TAG
+      Customer.value('(Name/text())[1]','VARCHAR(100)') AS Name, --TAG,
+	  Customer.value('(Address/text())[1]','VARCHAR(100)') AS Address, --TAG
+      Customer.value('(Profession/text())[1]','VARCHAR(100)') AS Profession --TAG
+ from @xml.nodes('/Customers/Customer')AS TEMPTABLE(Customer);
+
+ declare @id int = scope_identity()
+
+ insert into header(Sender,PONum)
+select 
+	   POHEAD.value('(H_SENDER/text())[1]','VARCHAR(100)') AS H_SENDER, --TAG
+      POHEAD.value('(H_PONUM/text())[1]','VARCHAR(100)') AS H_PONUM
+ from @xml.nodes('/Customers/E_PO/E_PO_HEAD')AS TEMPTABLE(POHEAD);
+
+  insert into detail(HeaderId,POLine, Qty, Price)
+select   @ID HeaderId,
+	   POHEADDEtail.value('(D_POLINE/text())[1]','VARCHAR(100)') AS D_POLINE, --TAG
+      POHEADDEtail.value('(D_QTY/text())[1]','VARCHAR(100)') AS D_QTY,
+	  POHEADDEtail.value('(D_PRICE/text())[1]','VARCHAR(100)') AS D_PRICE
+ from @xml.nodes('/Customers/E_PO/E_PO_DETAIL')AS TEMPTABLE(POHEADDEtail)
+
+END
